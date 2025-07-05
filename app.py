@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 import time
-from flask import Flask, request, render_template # render_template을 임포트합니다.
+from flask import Flask, request, render_template
 import re
 
 # --- Flask 앱 초기화 ---
@@ -10,9 +10,8 @@ app = Flask(__name__)
 # 가격 문자열을 숫자로 변환하는 함수 (단위: 만원)
 def convert_price_to_number(price_str):
     """ '5억', '1억 2,000', '30,000/100' 등의 가격 문자열을 숫자(만원 단위)로 변환합니다. """
-    price_str = price_str.replace(',', '')
+    price_str = str(price_str).replace(',', '')
     
-    # 월세의 경우 보증금을 기준으로 변환 (예: 30,000/100 -> 30000)
     if '/' in price_str:
         price_str = price_str.split('/')[0]
 
@@ -22,17 +21,17 @@ def convert_price_to_number(price_str):
             parts = price_str.split('억')
             num += int(parts[0]) * 10000
             if len(parts) > 1 and parts[1]:
-                num += int(parts[1])
+                num += int(parts[1].strip())
         else:
             num = int(price_str)
-    except ValueError:
-        return 0 # 숫자로 변환할 수 없는 경우 0을 반환
+    except (ValueError, TypeError):
+        return 0
         
     return num
 
-# 모든 거래 유형의 매물 데이터 수집 함수
+# --- 기능 수정: 모든 거래 유형의 매물 데이터 수집 ---
 def fetch_real_estate_data(complex_no, max_page=10):
-    """ 단지 고유번호를 사용하여 모든 매물 목록을 가져옵니다. """
+    """ 단지 고유번호를 사용하여 모든 매물 목록을 가져옵니다. (보안 토큰 제거) """
     all_articles = []
     trade_types = {'A1': '매매', 'B1': '전세', 'B2': '월세'}
 
@@ -41,11 +40,11 @@ def fetch_real_estate_data(complex_no, max_page=10):
         page = 1
         while page <= max_page:
             print(f"{page}페이지에서 데이터를 가져오는 중...")
-            # 실제 요청 시에는 유효한 쿠키와 헤더가 필요할 수 있습니다.
-            cookies = { 'NNB': 'VAE72MMG5ZTWQ' } 
+            
+            # [보안 수정] 하드코딩된 쿠키와 인증 토큰을 모두 제거합니다.
             headers = {
-                'accept': '*/*', 'accept-language': 'ko-KR,ko;q=0.9',
-                'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlJFQUxFU1RBVEUiLCJpYXQiOjE3NTE2NDE5MDAsImV4cCI6MTc1MTY1MjcwMH0.mKryVG_HhDJtcGj64v3RM0c_sWOT5tKkNnY8TjHVyK8',
+                'accept': '*/*',
+                'accept-language': 'ko-KR,ko;q=0.9',
                 'referer': f'https://new.land.naver.com/complexes/{complex_no}',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
             }
@@ -55,7 +54,8 @@ def fetch_real_estate_data(complex_no, max_page=10):
                 'page': page, 'complexNo': complex_no, 'order': 'rank',
             }
             try:
-                response = requests.get(f"{base_url}/{complex_no}", params=params, cookies=cookies, headers=headers)
+                # [보안 수정] cookies=... 부분을 제거합니다.
+                response = requests.get(f"{base_url}/{complex_no}", params=params, headers=headers)
                 response.raise_for_status()
                 data = response.json()
                 article_list = data.get("articleList", [])
@@ -71,12 +71,11 @@ def fetch_real_estate_data(complex_no, max_page=10):
                 break
     return all_articles
 
-
 # --- Flask 라우트 설정 ---
 @app.route('/')
 def index():
     """메인 페이지를 렌더링합니다."""
-    return render_template('index.html') # index.html 파일을 렌더링
+    return render_template('index.html')
 
 @app.route('/scrape', methods=['POST'])
 def scrape():
@@ -88,7 +87,6 @@ def scrape():
 
     articles = fetch_real_estate_data(complex_no, max_page)
     if not articles: 
-        # 결과가 없을 때도 results.html을 렌더링하되, table 데이터를 None으로 전달
         return render_template('results.html', table=None, complex_no=complex_no)
 
     df = pd.DataFrame(articles)
@@ -105,17 +103,14 @@ def scrape():
     df_selected = df[existing_columns].copy()
     df_selected.rename(columns=columns_map, inplace=True)
 
-    # 정렬/필터링을 위한 숫자 데이터 생성
     if '가격' in df_selected.columns:
         df_selected['price_numeric'] = df_selected['가격'].apply(convert_price_to_number)
     if '타입(m²)' in df_selected.columns:
         df_selected['area_numeric'] = pd.to_numeric(df_selected['타입(m²)'], errors='coerce')
 
-    # DataFrame을 딕셔너리 리스트로 변환하여 템플릿에 전달
     table_data = df_selected.to_dict('records')
 
     return render_template('results.html', table=table_data, complex_no=complex_no)
-
 
 # --- 앱 실행 ---
 if __name__ == '__main__':
