@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네이버 부동산 데이터 조회</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800">네이버 부동산 스크래퍼</h1>
+            <p class="mt-2 text-gray-600">조회할 아파트 단지 번호를 입력하세요.</p>
+        </div>
+        <form action="/scrape" method="post" class="space-y-6">
+            <div>
+                <label for="complex_no" class="text-sm font-medium text-gray-700">단지 번호 (Complex No.)</label>
+                <input type="text" id="complex_no" name="complex_no" required
+                       class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                       placeholder="예: 8692">
+            </div>
+            <div>
+                <label for="max_page" class="text-sm font-medium text-gray-700">최대 페이지 수 (유형별)</label>
+                <input type="number" id="max_page" name="max_page" min="1" value="10"
+                       class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <button type="submit"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300">
+                    데이터 조회
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

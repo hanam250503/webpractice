@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조회 결과 - 단지번호 {{ complex_no }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Noto Sans KR', sans-serif; } 
+        /* 테이블 헤더와 필터 메뉴 고정 */
+        thead th { position: sticky; top: 0; z-index: 10; }
+        .filter-controls { position: sticky; top: 41px; z-index: 10; background-color: #f9fafb; /* bg-gray-50 */ }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">매물 조회 결과 (단지번호: {{ complex_no }})</h1>
+            <a href="/" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">새로 조회하기</a>
+        </div>
+
+        {% if table %}
+        <!-- 필터 컨트롤 메뉴 -->
+        <div class="filter-controls p-4 rounded-lg shadow mb-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <!-- 거래유형 필터 -->
+            <div class="flex items-center gap-4">
+                <span class="font-semibold text-sm">거래유형:</span>
+                <label class="inline-flex items-center"><input type="checkbox" class="trade-type-filter" value="매매" checked> <span class="ml-2">매매</span></label>
+                <label class="inline-flex items-center"><input type="checkbox" class="trade-type-filter" value="전세" checked> <span class="ml-2">전세</span></label>
+                <label class="inline-flex items-center"><input type="checkbox" class="trade-type-filter" value="월세" checked> <span class="ml-2">월세</span></label>
+            </div>
+            <!-- 가격범위 필터 -->
+            <div class="flex items-center gap-2">
+                 <span class="font-semibold text-sm">가격(만원):</span>
+                 <input type="number" id="min-price" placeholder="최소" class="w-24 p-1 border rounded-md text-sm">
+                 <span class="mx-1">~</span>
+                 <input type="number" id="max-price" placeholder="최대" class="w-24 p-1 border rounded-md text-sm">
+            </div>
+            <!-- 정렬 필터 -->
+            <div class="flex items-center gap-2">
+                <span class="font-semibold text-sm">정렬:</span>
+                <select id="sort-column" class="p-1 border rounded-md text-sm">
+                    <option value="가격">가격</option>
+                    <option value="타입(m²)">타입(m²)</option>
+                </select>
+                <select id="sort-order" class="p-1 border rounded-md text-sm">
+                    <option value="asc">오름차순</option>
+                    <option value="desc">내림차순</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto bg-white rounded-lg shadow">
+            <div class="max-h-[75vh] overflow-y-auto">
+                <table class="w-full text-sm text-left text-gray-600" id="results-table">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-200">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left">단지명</th>
+                            <th scope="col" class="px-6 py-3 text-left">거래</th>
+                            <th scope="col" class="px-6 py-3 text-left">층</th>
+                            <th scope="col" class="px-6 py-3 text-left">가격</th>
+                            <th scope="col" class="px-6 py-3 text-left">타입(m²)</th>
+                            <th scope="col" class="px-6 py-3 text-left">향</th>
+                            <th scope="col" class="px-6 py-3 text-left">동</th>
+                            <th scope="col" class="px-6 py-3 text-left">부동산</th>
+                            <th scope="col" class="px-6 py-3 text-left">확인일</th>
+                            <th scope="col" class="px-6 py-3 text-left">매물 특징</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table %}
+                        <tr class="bg-white hover:bg-gray-50" 
+                            data-trade-type="{{ row.get('거래', '') }}" 
+                            data-price="{{ row.get('price_numeric', 0) }}"
+                            data-area="{{ row.get('area_numeric', 0) }}">
+                            <td class="px-6 py-4">{{ row.get('단지명', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('거래', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('층', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('가격', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('타입(m²)', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('향', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('동', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('부동산', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('확인일', '') }}</td>
+                            <td class="px-6 py-4">{{ row.get('매물 특징', '') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <h2 class="text-xl font-semibold text-gray-700">조회된 매물이 없습니다.</h2>
+            <p class="mt-2 text-gray-500">단지 번호를 확인하시거나 다른 번호로 시도해보세요.</p>
+        </div>
+        {% endif %}
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tableBody = document.querySelector("#results-table tbody");
+    if (!tableBody) return;
+
+    const originalRows = Array.from(tableBody.querySelectorAll("tr"));
+
+    const tradeTypeFilters = document.querySelectorAll('.trade-type-filter');
+    const minPriceInput = document.getElementById('min-price');
+    const maxPriceInput = document.getElementById('max-price');
+    const sortColumnSelect = document.getElementById('sort-column');
+    const sortOrderSelect = document.getElementById('sort-order');
+
+    const allControls = [...tradeTypeFilters, minPriceInput, maxPriceInput, sortColumnSelect, sortOrderSelect];
+    allControls.forEach(control => control.addEventListener('input', applyFiltersAndSort)); // 'change' 대신 'input'으로 더 즉각적인 반응
+
+    function applyFiltersAndSort() {
+        const selectedTradeTypes = Array.from(tradeTypeFilters)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+
+        const minPrice = parseFloat(minPriceInput.value) || 0;
+        const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
+        
+        let filteredRows = originalRows.filter(row => {
+            const tradeType = row.dataset.tradeType;
+            const price = parseFloat(row.dataset.price);
+
+            if (!selectedTradeTypes.includes(tradeType)) return false;
+            if (price < minPrice || price > maxPrice) return false;
+
+            return true;
+        });
+
+        const sortColumn = sortColumnSelect.value;
+        const sortOrder = sortOrderSelect.value;
+        
+        filteredRows.sort((a, b) => {
+            let valA, valB;
+            if (sortColumn === '가격') {
+                valA = parseFloat(a.dataset.price);
+                valB = parseFloat(b.dataset.price);
+            } else { // 타입(m²)
+                valA = parseFloat(a.dataset.area);
+                valB = parseFloat(b.dataset.area);
+            }
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        tableBody.innerHTML = ''; 
+        filteredRows.forEach(row => tableBody.appendChild(row));
+    }
+});
+</script>
+</body>
+</html>
